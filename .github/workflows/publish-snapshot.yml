@@ -65,7 +65,6 @@ jobs:
         with:
           branches: "develop"
           tag_name: "snapshot"
-          release_id: "create_release"
           delete_file: "*.tar.gz;*.zip"
           file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           overwrite: true
