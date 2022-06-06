@@ -1,6 +1,9 @@
 name: padogrid-SNAPSHOT Publish
 
-on: [push]
+on:
+  push:
+    branches: 'develop/**'
+    paths: 'RELEASE_NOTES.md'
 
 jobs:
   build:
@@ -17,6 +20,9 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           maven-version: ${{ matrix.maven }}
+      - name: Extract snapshot release notes
+        run: echo "*The latest Padogrid binary snapshot without man pages and Coherence support.*" > snapshot-release-notes.txt
+        run: sed -n '/.*SNAPSHOT/,/---/p' RELEASE_NOTES.md  | sed -n '/^-/,/$/p' | sed '/^---/d' >> snapshot-release-notes.txt
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - name: Create Release
@@ -27,8 +33,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: PadoGrid SNAPSHOT
-          body: |
-            The latest Padogrid snapshot without man pages and Coherence support.
+          body_path: snapshot-release-notes.txt
           draft: false
           prerelease: false
       - name: Upload binaries to release
@@ -36,7 +41,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          delete_files: "*.tar.gz;*.zip"
+          delete_file: "*.tar.gz;*.zip"
           file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           release_id: ${{ steps.create_release.outputs.id }}
           overwrite: true
