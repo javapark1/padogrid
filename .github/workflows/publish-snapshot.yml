@@ -29,26 +29,21 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-      - name: Delete Tag ${{ github.ref }}
+      - name: Delete Tag - snapshot
         uses: dev-drprasad/delete-tag-and-release@v0.2.0
         with:
           delete_release: true # default: false
-          tag_name: ${{ github.ref }}
+          tag_name: snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Delete Release
-        uses: liudonghua123/delete-release-action@v1
-        with:
-          release_name: 'PadoGrid SNAPSHOT'
-          
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: snapshot
           release_name: PadoGrid SNAPSHOT
           body_path: snapshot-release-notes.md
           draft: false
