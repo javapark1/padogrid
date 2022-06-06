@@ -37,6 +37,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
+      - name: Delete Release
+        uses: liudonghua123/delete-release-action@v1
+        with:
+          release_name: 'PadoGrid SNAPSHOT'
+          
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
