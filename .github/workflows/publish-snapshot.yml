@@ -36,8 +36,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          delete_files: *.tar.gz;*.zip
-          file: *.tar.gz;*.zip
+          delete_files: "*.tar.gz;*.zip"
+          file: "padogrid-deployment/target/assembly*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           release_id: ${{ steps.create_release.outputs.id }}
           overwrite: true
           verbose: true
