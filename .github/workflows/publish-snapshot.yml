@@ -23,13 +23,13 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: PadoGrid SNAPSHOT
           body: |
-            Test upload-to-github-release works with ```actions/create-release```
-          draft: true
+            The latest Padogrid snapshot without man pages and Coherence support.
+          draft: false
           prerelease: false
       - name: Upload binaries to release
         uses: xresloader/upload-to-github-release@master
@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           delete_files: "*.tar.gz;*.zip"
-          file: "padogrid-deployment/target/assembly*.tar.gz;padogrid-deployment/target/assembly/*.zip"
+          file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           release_id: ${{ steps.create_release.outputs.id }}
           overwrite: true
           verbose: true
