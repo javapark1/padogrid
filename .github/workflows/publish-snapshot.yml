@@ -1,3 +1,6 @@
+#
+# Build and publish PadoGrid snapshot upon RELEASE_NOTES.md push
+#
 name: padogrid-SNAPSHOT Publish
 
 on:
@@ -52,7 +55,7 @@ jobs:
           release_name: PadoGrid SNAPSHOT
           body_path: snapshot-release-notes.md
           draft: false
-          prerelease: false
+          prerelease: true
 
       - name: Upload Release Assets - snapshot
         uses: xresloader/upload-to-github-release@master
