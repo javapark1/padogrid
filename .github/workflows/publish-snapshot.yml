@@ -40,6 +40,7 @@ jobs:
       - name: Delete Tag and Release - snapshot
         uses: dev-drprasad/delete-tag-and-release@v0.2.0
         with:
+          release_id: create_release
           delete_release: true # default: false
           tag_name: snapshot # tag name to delete
         env:
@@ -64,6 +65,7 @@ jobs:
         with:
           branches: "develop"
           tag_name: "snapshot"
+          release_id: "create_release"
           delete_file: "*.tar.gz;*.zip"
           file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           overwrite: true
