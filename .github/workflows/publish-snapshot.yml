@@ -37,15 +37,13 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-      - name: Recreate Release
-        uses: GongT/actions-recreate-release@v1
+      - name: Delete Tag and Release - snapshot
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true # default: false
+          tag_name: snapshot # tag name to delete
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: snapshot
-          release_name: PadoGrid SNAPSHOT
-          draft: false
-          prerelease: true
 
       - name: Create Tag/Release - snapshot
         id: create_release
