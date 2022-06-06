@@ -48,7 +48,6 @@ jobs:
           body_path: snapshot-release-notes.md
           draft: false
           prerelease: false
-          overwrite: true
 
       - name: Upload Release
         uses: xresloader/upload-to-github-release@master
