@@ -31,7 +31,6 @@ To run PadoGrid as a container, please follow the instructions in the links belo
 - [Running PadoGrid using Docker and Podman](#running-padogrid-using-docker-and-podman)
 - [Running PadoGrid in Kubernetes](#running-padogrid-in-kubernetes)
 
-
 ## Downloads
 
 PadoGrid binary downloads are available from the *Releases* page. If your host does not have access to the Internet and you are unable to run `install_padogrid` then you can download a version from this link and install it manually.
