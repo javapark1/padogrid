@@ -49,6 +49,6 @@ jobs:
           delete_file: "*.tar.gz;*.zip"
           file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           release_id: 0
-          breanches: "develop"
+          branches: "develop"
           overwrite: true
           verbose: true
