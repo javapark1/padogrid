@@ -118,8 +118,6 @@ export PRODUCT
   sed: can't read 0: No such file or directory
   ```
 
-----
-
 ## Version 0.9.9
 
 ### Release Date: 08/16/21
