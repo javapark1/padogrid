@@ -1,9 +1,6 @@
 name: padogrid-SNAPSHOT Publish
 
-on:
-  push:
-    branches: 'develop/**'
-    paths: 'RELEASE_NOTES.md'
+on: [push]
 
 jobs:
   build:
