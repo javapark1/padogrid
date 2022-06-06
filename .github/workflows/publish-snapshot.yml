@@ -3,7 +3,7 @@ name: padogrid-SNAPSHOT Publish
 on:
   push:
     branches:
-      - 'develop/**'
+      - 'develop'
     path:
       - 'RELEASE_NOTES.md'
 
