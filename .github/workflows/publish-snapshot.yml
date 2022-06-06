@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'develop'
-    path:
+    paths:
       - 'RELEASE_NOTES.md'
 
 jobs:
