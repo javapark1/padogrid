@@ -21,8 +21,8 @@ jobs:
           java-version: ${{ matrix.java }}
           maven-version: ${{ matrix.maven }}
       - name: Extract snapshot release notes
-        run: echo "*The latest Padogrid binary snapshot without man pages and Coherence support.*" > snapshot-release-notes.txt
-        run: sed -n '/.*SNAPSHOT/,/---/p' RELEASE_NOTES.md  | sed -n '/^-/,/$/p' | sed '/^---/d' >> snapshot-release-notes.txt
+        run: echo "*The latest Padogrid binary snapshot without man pages and Coherence support.*" > snapshot-release-notes.md
+        run: sed -n '/.*SNAPSHOT/,/---/p' RELEASE_NOTES.md  | sed -n '/^-/,/$/p' | sed '/^---/d' >> snapshot-release-notes.md
       - name: Build with Maven
         run: mvn -B package --file pom.xml
       - name: Create Release
@@ -33,7 +33,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: PadoGrid SNAPSHOT
-          body_path: snapshot-release-notes.txt
+          body_path: snapshot-release-notes.md
           draft: false
           prerelease: false
       - name: Upload binaries to release
