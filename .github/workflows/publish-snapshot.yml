@@ -45,13 +45,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Delete Release - snapshot (the above action is unable to find release)
-        uses: liudonghua123/delete-release-action@v1
-        with:
-          release_name: 'padogrid-SNAPSHOT'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create Tag/Release - snapshot
         id: create_release
         uses: actions/create-release@v1

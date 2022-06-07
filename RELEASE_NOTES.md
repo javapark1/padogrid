@@ -7,7 +7,7 @@ https://github.com/padogrid
 
 ### Release Date: 06/04/22
 
-- Test58
+- Test59
 - Fixed `install_bundle` to correctly install a workspace bundle.
 - Updated `perf_test` README.md files.
 - Added entity relationship (ER) support for Geode `perf_test` that generates customer mock data.
