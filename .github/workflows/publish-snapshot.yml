@@ -50,7 +50,6 @@ jobs:
         with:
           prerelease: true
           tag: "snapshot"
-          commit: true  # Create tag if nonexistent
           artifacts: "padogrid-deployment/target/assembly/*.tar.gz,padogrid-deployment/target/assembly/*.zip"
           bodyFile: "snapshot-release-notes.md"
           removeArtifacts: true
