@@ -41,7 +41,6 @@ jobs:
         shell: bash
 
       - name: Echo Padogrid Version
-        id: version
         run: echo "::set-output name=padogrid_version::Padogrid v0.9.17-SNAPSHOT"
         shell: bash
 
