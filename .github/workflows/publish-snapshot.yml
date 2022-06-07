@@ -34,10 +34,10 @@ jobs:
         run: export PADOGRID_VERSION=$(grep -m 1 Version RELEASE_NOTES.md | sed 's/^.*Version //') && echo "PADOGRID_VERSION=$PADOGRID_VERSION"
         shell: bash
 
-        #run: echo ::set-output name=padogrid_version::${{ env.PADOGRID_VERSION }}
+        #run: echo "::set-output name=padogrid_version::0.9.17-SNAPSHOT"
       - name: Determine PadoGrid Snapshot Version2
         id: version
-        run: echo "::set-output name=padogrid_version::Padogrid v0.9.17-SNAPSHOT"
+        run: echo "::set-output name=padogrid_version::$PADOGRID_VERSION"
         shell: bash
 
       - name: Echo Padogrid Version
@@ -62,7 +62,7 @@ jobs:
       - name: Create Tag/Release - snapshot
         uses: ncipollo/release-action@v1.10.0
         with:
-          name: "Padogrid ${{ steps.version.outputs.padogrid_version }}"
+          name: "Padogrid v${{ steps.version.outputs.padogrid_version }}"
           prerelease: true
           tag: "snapshot"
           artifacts: "padogrid-deployment/target/assembly/*.tar.gz,padogrid-deployment/target/assembly/*.zip"
