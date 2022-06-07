@@ -51,8 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          draft: false
-          prerelease: false
+          prerelease: true
           tag_name: snapshot
           release_name: 'padogrid-SNAPSHOT'
           body_path: snapshot-release-notes.md
