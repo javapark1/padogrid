@@ -37,11 +37,11 @@ jobs:
         #run: echo ::set-output name=padogrid_version::${{ env.PADOGRID_VERSION }}
       - name: Determine PadoGrid Snapshot Version2
         id: version
-        run: echo "padogrid_version=${{ steps.version.outputs.padogrid_version }}"
+        run: echo "::set-output name=padogrid_version::Padogrid v0.9.17-SNAPSHOT"
         shell: bash
 
       - name: Echo Padogrid Version
-        run: echo "::set-output name=padogrid_version::Padogrid v0.9.17-SNAPSHOT"
+        run: echo "padogrid_version=${{ steps.version.outputs.padogrid_version }}"
         shell: bash
 
       - name: Extract Snapshot Release Notes
