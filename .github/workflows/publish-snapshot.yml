@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: snapshot
-          release_name: 'padoprid-SNAPSHOT'
+          release_name: 'padogrid-SNAPSHOT'
           body_path: snapshot-release-notes.md
           draft: false
           prerelease: false
