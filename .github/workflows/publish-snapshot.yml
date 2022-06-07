@@ -30,6 +30,10 @@ jobs:
         run: echo "*The latest Padogrid binary snapshot without man pages and Coherence support.*" > snapshot-release-notes.md
         shell: bash
 
+      - name: Extract Snapshot Version
+        run: export PADOGRID_VERSION=$(grep -m 1 Version RELEASE_NOTES.md | sed 's/^.*Version //')
+        shell: bash
+
       - name: Extract Snapshot Release Notes
         run: sed -n '/.*SNAPSHOT/,/---/p' RELEASE_NOTES.md  | sed -n '/^-/,/$/p' | sed '/^---/d' >> snapshot-release-notes.md
         shell: bash
@@ -48,7 +52,7 @@ jobs:
       - name: Create Tag/Release - snapshot
         uses: ncipollo/release-action@v1.10.0
         with:
-          name: "padogrid-SNAPSHOT"
+          name: "Padogrid ${{ env.PADOGRID_VERSION }}"
           prerelease: true
           tag: "snapshot"
           artifacts: "padogrid-deployment/target/assembly/*.tar.gz,padogrid-deployment/target/assembly/*.zip"
