@@ -38,7 +38,7 @@ jobs:
         run: mvn -B package --file pom.xml
 
       - name: Delete Tag/Release - snapshot
-        uses: javapark1/delete-tag-and-release@v0.2.0
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
         with:
           delete_release: true # default: false
           tag_name: 'snapshot' # tag name to delete
@@ -51,6 +51,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          draft: false
+          prerelease: false
           tag_name: snapshot
           release_name: 'padogrid-SNAPSHOT'
           body_path: snapshot-release-notes.md
