@@ -30,8 +30,8 @@ jobs:
         run: echo "*The latest Padogrid binary snapshot without man pages and Coherence support.*" > snapshot-release-notes.md
         shell: bash
 
-      - name: Extract Snapshot Version
-        run: export PADOGRID_VERSION=$(grep -m 1 Version RELEASE_NOTES.md | sed 's/^.*Version //')
+      - name: Determine PadoGrid Snapshot Version
+        run: export PADOGRID_VERSION=$(grep -m 1 Version RELEASE_NOTES.md | sed 's/^.*Version //') && echo "PADOGRID_VERSION=$PADOGRID_VERSION"
         shell: bash
 
       - name: Extract Snapshot Release Notes
