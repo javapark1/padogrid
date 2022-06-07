@@ -46,10 +46,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete Release - snapshot (the above action is unable to find release)
-        uses: andreaswilli/delete-release-assets-action@v2.0.0
+        uses: liudonghua123/delete-release-action@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: snapshot
+          release_id: create_release
+          release_name: 'PadoGrid SNAPSHOT'
 
       - name: Create Tag/Release - snapshot
         id: create_release
@@ -58,7 +58,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: snapshot
-          release_name: PadoGrid SNAPSHOT
+          release_name: 'PadoGrid SNAPSHOT'
           body_path: snapshot-release-notes.md
           draft: false
           prerelease: false
