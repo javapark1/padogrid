@@ -40,7 +40,6 @@ jobs:
       - name: Delete Tag and Release - snapshot
         uses: dev-drprasad/delete-tag-and-release@v0.2.0
         with:
-          release_id: create_release
           delete_release: true # default: false
           tag_name: snapshot # tag name to delete
         env:
