@@ -36,7 +36,7 @@ jobs:
 
       - name: Determine PadoGrid Snapshot Version
         id: version
-        run: echo ::set-output name=padogrid_version::$PADOGRID_VERSION
+        run: echo ::set-output name=padogrid_version::${{ env.PADOGRID_VERSION }}
         shell: bash
 
       - name: Extract Snapshot Release Notes
