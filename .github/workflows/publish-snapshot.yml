@@ -55,7 +55,7 @@ jobs:
           release_name: PadoGrid SNAPSHOT
           body_path: snapshot-release-notes.md
           draft: false
-          prerelease: true
+          prerelease: false
 
       - name: Upload Release Assets - snapshot
         uses: xresloader/upload-to-github-release@master
@@ -67,4 +67,4 @@ jobs:
           delete_file: "*.tar.gz;*.zip"
           file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
           overwrite: true
-          verbose: true
+          verbose: false
