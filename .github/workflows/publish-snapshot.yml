@@ -48,19 +48,18 @@ jobs:
       - name: Delete Release - snapshot (the above action is unable to find release)
         uses: liudonghua123/delete-release-action@v1
         with:
-          release_id: create_release
-          release_name: 'PadoGrid SNAPSHOT'
+          release_name: 'padogrid-SNAPSHOT'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Tag/Release - snapshot
-        id: create_release
+        id: 1
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: snapshot
-          release_name: 'PadoGrid SNAPSHOT'
+          release_name: 'padoprid-SNAPSHOT'
           body_path: snapshot-release-notes.md
           draft: false
           prerelease: false
