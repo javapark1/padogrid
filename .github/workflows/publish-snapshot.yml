@@ -48,7 +48,8 @@ jobs:
       - name: Create Tag/Release - snapshot
         uses: ncipollo/release-action@v1.10.0
         with:
-          prerelease: true
+          name: "padogrid-SNAPSHOT"
+          prerelease: false
           tag: "snapshot"
           artifacts: "padogrid-deployment/target/assembly/*.tar.gz,padogrid-deployment/target/assembly/*.zip"
           bodyFile: "snapshot-release-notes.md"
