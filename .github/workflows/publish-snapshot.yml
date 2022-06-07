@@ -50,6 +50,8 @@ jobs:
         with:
           release_id: create_release
           release_name: 'PadoGrid SNAPSHOT'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Tag/Release - snapshot
         id: create_release
