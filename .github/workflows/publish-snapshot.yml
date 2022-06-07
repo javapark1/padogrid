@@ -46,24 +46,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Tag/Release - snapshot
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        - uses: ncipollo/release-action@v1
         with:
           prerelease: true
-          tag_name: snapshot
-          release_name: 'padogrid-SNAPSHOT'
-          body_path: snapshot-release-notes.md
-
-      - name: Upload Release Assets - snapshot
-        uses: xresloader/upload-to-github-release@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          branches: "develop"
-          tag_name: "snapshot"
-          delete_file: "*.tar.gz;*.zip"
-          file: "padogrid-deployment/target/assembly/*.tar.gz;padogrid-deployment/target/assembly/*.zip"
-          overwrite: true
-          verbose: false
+          tag: snapshot
+          commit: true  # Create tag if nonexistent
+          artifacts: "padogrid-deployment/target/assembly/*.tar.gz,padogrid-deployment/target/assembly/*.zip"
+          bodyFile: "snapshot-release-notes.md"
+          removeArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
