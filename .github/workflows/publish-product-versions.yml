@@ -1,4 +1,6 @@
-# Publish GitHub workflow artifacts tutorial example
+# 
+# Generate padogrid_download_versions.sh file that includes downlodable product versions
+#
 name: Publish GitHub Actions Artifacts Example
 
 on:
@@ -11,17 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Step 1 - Create a temporary artifact downloads folder
+      - name: Step 1 - Create an artifact downloads folder and run install_padogrid -save padogrid_download_versions.sh
         run: |
           mkdir downloads
           curl -fsSL https://raw.githubusercontent.com/javapark1/padogrid/develop/padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid | /bin/bash -s -- -no-stty -quiet -save downloads/padogrid_download_versions.sh
         
-      - name: step 2 - Add artifacts to publish to the temp folder
+      - name: step 2 - Add artifacts to publish to the downloads folder
         run: |
           cd downloads
-          echo 'alpha'    > alpha.html
-          echo 'bravo'    > bravo.html
-          echo 'charlie'  > charlie.html
           cd ..
     
       - name: Step 3 - Use the Upload Artifact GitHub Action
@@ -29,3 +28,13 @@ jobs:
         with: 
           name: assets-for-download
           path: downloads
+
+    - name: Step 4 - Upload padogrid_download_versions.sh to the branch release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: downloads/padogrid_download_versions.sh
+        asset_name: padogrid_download_versions.sh
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: "PadoGrid downlodable product versions"

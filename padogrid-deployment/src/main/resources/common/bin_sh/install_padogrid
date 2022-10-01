@@ -1191,8 +1191,13 @@ fi
 
 if [ "$DOWNLOAD_VERSIONS_FILE" != "" ]; then
    __DIR=$(dirname $DOWNLOAD_VERSIONS_FILE)
+   if [ ! -d "$__DIR" ]; then
+      echo -e "${CError}ERROR:${CNone} Invalid file path. Directory does not exist. Command aborted."
+      echo "   $DOWNLOAD_VERSIONS_FILE"
+      exit 1
+   fi
    if [ ! -w "$__DIR" ]; then
-      echo -e "${CError}ERROR:${CNone} Invalid file path. You do not have write permissions."
+      echo -e "${CError}ERROR:${CNone} Invalid file path. You do not have write permissions. Command aborted."
       echo "   $DOWNLOAD_VERSIONS_FILE"
       exit 1
    fi
