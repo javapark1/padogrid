@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ========================================================================
-# Copyright (c) 2020-2021 Netcrest Technologies, LLC. All rights reserved.
+# Copyright (c) 2020-2022 Netcrest Technologies, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,32 +25,43 @@ else
    PRODUCT_SPECIFIED="false"
    PRODUCT_ARG=""
    QUIET="false" 
+   NO_STTY_SPECIFIED="false"
    PREV=""
    for i in "$@"; do
       case $i in
          -quiet ) QUIET="true";;
          -product ) PRODUCT_SPECIFIED="true";;
+         -no-stty ) NO_STTY_SPECIFIED="true";;
+         -save ) SAVE_SPECIFIED="true";;
          -?) HELP="true";;
-         * ) if [ "$PREV" == "-product" ]; then PRODUCT_ARG="$i"; else echo "Invalid option: [$i]. Command aborted.";  exit 1; fi;;
+         * ) 
+            if [ "$PREV" == "-product" ]; then
+               PRODUCT_ARG="$i";
+            elif [ "$PREV" == "-save" ]; then
+               SAVE_ARG="$i";
+            else
+               echo "Invalid option: [$i]. Command aborted."
+               exit 1
+            fi;;
       esac
       PREV="$i"
    done
 fi
 
-DOWNLOADABLE_PRODUCTS="padogrid pado padodesktop padoweb geode hazelcast-enterprise hazelcast-oss hazelcast-mc hazelcast-desktop jet-enterprise jet-oss snappydata spark kafka hadoop"
+DOWNLOADABLE_PRODUCTS="padogrid pado padodesktop padoweb padoeclipse geode hazelcast-enterprise hazelcast-oss hazelcast-mc hazelcast-desktop jet-enterprise jet-oss redis-oss snappydata spark kafka hadoop"
 
 EXECUTABLE="`basename $0`"
 
 # 
 # Determine the PadoGrid environment base path. Default is "$HOME/Padogrid".
 #
-if [ "$PADOGRID_ENV_BASE_PATH" == "" ]; then
+if [ "$PADOGRID_WORKSPACES_HOME" != "" ]; then
+   PADOGRID_ENV_BASE_PATH="$(dirname $(dirname $PADOGRID_WORKSPACES_HOME))"
+elif [ "$PADOGRID_ENV_BASE_PATH" == "" ]; then
    if [ "$PADOGRID_HOME" == "" ]; then
       PADOGRID_ENV_BASE_PATH="$HOME/Padogrid"
-   else
-      PADOGRID_ENV_BASE_PATH="$(dirname $(dirname $PADOGRID_WORKSPACES_HOME))"
    fi
-fi      
+fi
 
 # If the base path is not writable then set it to the default PadoGrid base path.
 if [ ! -w "$PADOGRID_ENV_BASE_PATH" ]; then
@@ -74,21 +85,25 @@ PADOGRID_DOWNLOAD_URL="https://github.com/padogrid/padogrid/releases"
 PADO_DOWNLOAD_URL=$PADOGRID_DOWNLOAD_URL
 PADODESKTOP_DOWNLOAD_URL=$PADOGRID_DOWNLOAD_URL
 PADOWEB_DOWNLOAD_URL=$PADOGRID_DOWNLOAD_URL
+PADOECLIPSE_DOWNLOAD_URL=$PADOGRID_DOWNLOAD_URL
 GEODE_DOWNLOAD_URL="https://archive.apache.org/dist/geode/"
-HAZELCAST_ENTERPRISE_DOWNLOAD_URL="https://hazelcast.com/get-started/download/"
+HAZELCAST_ENTERPRISE_DOWNLOAD_URL="https://hazelcast.jfrog.io/artifactory/download/hazelcast-enterprise"
 HAZELCAST_OSS_DOWNLOAD_URL="https://hazelcast.org/imdg/download/archives/#hazelcast-imdg"
-HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_URL="https://hazelcast.com/get-started/download/"
+HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_URL="https://hazelcast.com/open-source-projects/downloads/archives/"
 HAZELCAST_DESKTOP_DOWNLOAD_URL="https://github.com/netcrest/hazelcast-desktop/releases"
 JET_ENTERPRISE_DOWNLOAD_URL="https://hazelcast.com/get-started/download/"
 JET_OSS_DOWNLOAD_URL="https://github.com/hazelcast/hazelcast-jet/releases"
+REDIS_DOWNLOAD_URL="https://github.com/redis/redis/releases"
 SNAPPYDATA_DOWNLOAD_URL="https://github.com/TIBCOSoftware/snappydata/releases"
 SPARK_DOWNLOAD_URL="https://archive.apache.org/dist/spark/"
 KAFKA_DOWNLOAD_URL="https://archive.apache.org/dist/kafka/"
 HADOOP_DOWNLOAD_URL="https://archive.apache.org/dist/hadoop/common/"
 
+PADOECLIPSE_MANUAL_URL="https://github.com/padogrid/padogrid/wiki/Eclipse"
+
 __options()
 {
-   echo "-product -quiet -?"
+   echo "-product -quiet -simulate -?"
 }
 
 if [ "$OPTIONS" == "true" ]; then
@@ -103,7 +118,7 @@ NAME
    $EXECUTABLE - Install Padogrid and downloable products
 
 SYNOPSIS
-   $EXECUTABLE [-product] [-?]
+   $EXECUTABLE [-product] [-quiet] [-simulate] [-?]
 
 DESCRIPTION
    Installs PadoGrid and downloadable products. This command downloads one or more selected products
@@ -128,11 +143,8 @@ cat <<EOF
    -quiet
              If specified, then it runs in the non-internactive mode. By default, it installs all of
              the latest products if not installed and creates an RWE if it does not exist. Note that
-             installing all the products may take over an hour to complete due to the slow download 
-             of Hadoop.
-
-NOTES
-   Hadoop download may take over 50 minutes to complete.
+             installing all the products may take up to a few minutes to complete depending on your
+             network speed.
 
 EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
@@ -150,10 +162,10 @@ EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
 cat <<EOF
       .
-      ├── downloads
-      ├── products
-      ├── snapshots
-      └── workspaces
+      $TTee downloads
+      $TTee products
+      $TTee snapshots
+      $TLel workspaces
 EOF
 else
 cat <<EOF
@@ -185,6 +197,7 @@ echo -e "      - Hazelcast Management Center ${CUrl}$HAZELCAST_MANAGEMENT_CENTER
 echo -e "      - HazelcastDesktop            ${CUrl}$HAZELCAST_DESKTOP_DOWNLOAD_URL${CNone}"
 echo -e "      - Jet Enterprise              ${CUrl}$JET_ENTERPRISE_DOWNLOAD_URL${CNone}"
 echo -e "      - Jet OSS                     ${CUrl}$JET_OSS_DOWNLOAD_URL${CNone}"
+echo -e "      - Redis OSS                   ${CUrl}$REDIS_DOWNLOAD_URL${CNone}"
 echo -e "      - TIBCO SnappyData            ${CUrl}$SNAPPYDATA_DOWNLOAD_URL${CNone}"
 echo -e "      - Apache Spark                ${CUrl}$SPARK_DOWNLOAD_URL${CNone}"
 echo -e "      - Apache Kafka                ${CUrl}$KAFKA_DOWNLOAD_URL${CNone}"
@@ -200,6 +213,7 @@ echo -e "      - Hazelcast Management Center $HAZELCAST_MANAGEMENT_CENTER_DOWNLO
 echo -e "      - HazelcastDesktop            $HAZELCAST_DESKTOP_DOWNLOAD_URL"
 echo -e "      - Jet Enterprise              $JET_ENTERPRISE_DOWNLOAD_URL"
 echo -e "      - Jet OSS                     $JET_OSS_DOWNLOAD_URL"
+echo -e "      - Redis OSS                   $REDIS_DOWNLOAD_URL"
 echo -e "      - TIBCO SnappyData            $SNAPPYDATA_DOWNLOAD_URL"
 echo -e "      - Apache Spark                $SPARK_DOWNLOAD_URL"
 echo -e "      - Apache Kafka                $KAFKA_DOWNLOAD_URL"
@@ -217,12 +231,16 @@ if [ "$MAN_SPECIFIED" == "false" ]; then
 
 echo -e "      - Oracle Coherence     ${CUrl}https://www.oracle.com/middleware/technologies/coherence-downloads.html${CNone}"
 echo -e "      - TIBCO ComputeDB      ${CUrl}https://edelivery.tibco.com/storefront/index.ep${CNone}"
+echo -e "      - Redis Enterprise     ${CUrl}https://redis.com/redis-enterprise-software/download-center/software/${CNone}"
+echo -e "      - Redis Stack          ${CUrl}https://redis.io/download/${CNone}"
 echo -e "      - VMware Tanzu GemFire ${CUrl}https://network.pivotal.io/products/pivotal-gemfire${CNone}"
 
 else
 
 echo -e "      - Oracle Coherence     https://www.oracle.com/middleware/technologies/coherence-downloads.html"
 echo -e "      - TIBCO ComputeDB      https://edelivery.tibco.com/storefront/index.ep"
+echo -e "      - Redis Enterprise     https://redis.com/redis-enterprise-software/download-center/software/"
+echo -e "      - Redis Stack          https://redis.io/download/"
 echo -e "      - VMware Tanzu GemFire https://network.pivotal.io/products/pivotal-gemfire"
 
 fi
@@ -252,16 +270,31 @@ fi
 cat <<EOF
 
 NOTES
-   Jet Management Center installation is no longer supported. Install Hazelcast Management Center
-   instead. It supports both IMDG and Jet.
+   - Jet Management Center installation is no longer supported. Install Hazelcast Management Center
+     instead. It supports both IMDG and Jet.
 
-   PadoGrid support for Kafka is limited to the new RAFT mode which requires Kafka 2.8.0 or
-   a later version.
+   - PadoGrid support for Kafka is limited to the new RAFT mode which requires Kafka 2.8.0 or
+     a later version.
+
+   - PadoEclipse is an Eclipse plugin for generating Gedoe/GemFire and Pado data classes. Once it is
+     downloaded, place it in the Eclipse's 'dropins' folder. Please see instructions in the following link.
 
 EOF
+
+if [ "$MAN_SPECIFIED" == "false" ]; then
+
+echo -e "     ${CUrl}$PADOECLIPSE_MANUAL_URL${CNone}"
+
+else
+
+echo -e "     $PADOECLIPSE_MANUAL_URL"
+
+fi
+echo ""
+
 if [ "$IS_STANDALONE_SCRIPT" == "false" ]; then
 echo "SEE ALSO"
-   printSeeAlsoList "change_version show_products update_products" $EXECUTABLE
+   printSeeAlsoList "change_version show_products uninstall_product update_products" $EXECUTABLE
 fi
    exit
 fi
@@ -296,6 +329,15 @@ if [ "$PRODUCT_ARG" != "" ]; then
       exit 1
    fi
 fi
+# Exit if invalid save option specified
+DOWNLOAD_VERSIONS_FILE="$SAVE_ARG"
+if [ "$SAVE_SPECIFIED" == "true" ]; then
+   if [ "$SAVE_ARG" == "" ] || [[ "$SAVE_ARG" == "-"** ]]; then
+      echo -e >&2 "${CLightRed}ERROR:${CNone} Invalid save option: [$SAVE_ARG]. Please enter file name."
+      echo >&2 "       Command aborted."
+      exit 1
+   fi
+fi
 
 cat <<EOF
 
@@ -313,10 +355,11 @@ echo -e "[4]  Hazelcast Management Center ${CUrl}$HAZELCAST_MANAGEMENT_CENTER_DO
 echo -e "[5]  HazelcastDesktop            ${CUrl}$HAZELCAST_DESKTOP_DOWNLOAD_URL${CNone}"
 echo -e "[6]  Jet Enterprise              ${CUrl}$JET_ENTERPRISE_DOWNLOAD_URL${CNone}"
 echo -e "[7]  Jet OSS                     ${CUrl}$JET_OSS_DOWNLOAD_URL${CNone}"
-echo -e "[8]  TIBCO SnappyData            ${CUrl}$SNAPPYDATA_DOWNLOAD_URL${CNone}"
-echo -e "[9]  Apache Spark                ${CUrl}$SPARK_DOWNLOAD_URL${CNone}"
-echo -e "[10] Apache Kafka                ${CUrl}$KAFKA_DOWNLOAD_URL${CNone}"
-echo -e "[11] Apache Hadoop               ${CUrl}$HADOOP_DOWNLOAD_URL${CNone}"
+echo -e "[8]  REDIS OSS                   ${CUrl}$REDIS_DOWNLOAD_URL${CNone}"
+echo -e "[9]  TIBCO SnappyData            ${CUrl}$SNAPPYDATA_DOWNLOAD_URL${CNone}"
+echo -e "[10] Apache Spark                ${CUrl}$SPARK_DOWNLOAD_URL${CNone}"
+echo -e "[11] Apache Kafka                ${CUrl}$KAFKA_DOWNLOAD_URL${CNone}"
+echo -e "[12] Apache Hadoop               ${CUrl}$HADOOP_DOWNLOAD_URL${CNone}"
 
 else
 
@@ -328,10 +371,11 @@ echo -e "[4]  Hazelcast Management Center $HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_
 echo -e "[5]  HazelcastDesktop            $HAZELCAST_DESKTOP_DOWNLOAD_URL"
 echo -e "[6]  Jet Enterprise              $JET_ENTERPRISE_DOWNLOAD_URL"
 echo -e "[7]  Jet OSS                     $JET_OSS_DOWNLOAD_URL"
-echo -e "[8]  TIBCO SnappyData            $SNAPPYDATA_DOWNLOAD_URL"
-echo -e "[9]  Apache Spark                $SPARK_DOWNLOAD_URL"
-echo -e "[10] Apache Kafka                $KAFKA_DOWNLOAD_URL"
-echo -e "[11] Apache Hadoop               $HADOOP_DOWNLOAD_URL"
+echo -e "[8]  Redis OSS                   $REDIS_DOWNLOAD_URL"
+echo -e "[9]  TIBCO SnappyData            $SNAPPYDATA_DOWNLOAD_URL"
+echo -e "[10] Apache Spark                $SPARK_DOWNLOAD_URL"
+echo -e "[11] Apache Kafka                $KAFKA_DOWNLOAD_URL"
+echo -e "[12] Apache Hadoop               $HADOOP_DOWNLOAD_URL"
 
 fi
 
@@ -346,14 +390,18 @@ EOF
 if [ "$MAN_SPECIFIED" == "false" ]; then
 
 echo -e "[0] Oracle Coherence     ${CUrl}https://www.oracle.com/middleware/technologies/coherence-downloads.html${CNone}"
-echo -e "[1] TIBCO ComputeDB      ${CUrl}https://edelivery.tibco.com/storefront/index.ep${CNone}"
-echo -e "[2] VMware Tanzu GemFire ${CUrl}https://network.pivotal.io/products/pivotal-gemfire${CNone}"
+echo -e "[1] Redis Enterprise     ${CUrl}https://redis.com/redis-enterprise-software/download-center/software/${CNone}"
+echo -e "[2] Redis Stack          ${CUrl}https://redis.io/download/${CNone}"
+echo -e "[3] TIBCO ComputeDB      ${CUrl}https://edelivery.tibco.com/storefront/index.ep${CNone}"
+echo -e "[4] VMware Tanzu GemFire ${CUrl}https://network.pivotal.io/products/pivotal-gemfire${CNone}"
 
 else
 
 echo -e "[0] Oracle Coherence     https://www.oracle.com/middleware/technologies/coherence-downloads.html"
-echo -e "[1] TIBCO ComputeDB      https://edelivery.tibco.com/storefront/index.ep"
-echo -e "[2] VMware Tanzu GemFire https://network.pivotal.io/products/pivotal-gemfire"
+echo -e "[1] Redis Enterprise     https://redis.com/redis-enterprise-software/download-center/software/"
+echo -e "[2] Redis Stack          https://redis.io/download/"
+echo -e "[3] TIBCO ComputeDB      https://edelivery.tibco.com/storefront/index.ep"
+echo -e "[4] VMware Tanzu GemFire https://network.pivotal.io/products/pivotal-gemfire"
 
 fi
 cat <<EOF
@@ -366,15 +414,17 @@ EOF
 
 if [ "$MAN_SPECIFIED" == "false" ]; then
 
-echo -e "[0] Oracle JDK      ${CUrl}https://www.oracle.com/java/technologies/javase-downloads.html${CNone}"
-echo -e "[1] Oracle Open JDK ${CUrl}https://jdk.java.net/${CNone}"
-echo -e "[2] Azule Open JDK  ${CUrl}https://www.azul.com/downloads/${CNone}"
+echo -e "[0] Oracle JDK       ${CUrl}https://www.oracle.com/java/technologies/javase-downloads.html${CNone}"
+echo -e "[1] Oracle OpenJDK   ${CUrl}https://jdk.java.net/${CNone}"
+echo -e "[2] Azule OpenJDK    ${CUrl}https://www.azul.com/downloads/${CNone}"
+echo -e "[3] Adoptium OpenJDK ${CUrl}https://adoptium.net/${CNone}"
 
 else
 
-echo -e "[0] Oracle JDK      https://www.oracle.com/java/technologies/javase-downloads.html"
-echo -e "[1] Oracle Open JDK https://jdk.java.net/"
-echo -e "[2] Azule Open JDK  https://www.azul.com/downloads/"
+echo -e "[0] Oracle JDK       https://www.oracle.com/java/technologies/javase-downloads.html"
+echo -e "[1] Oracle OpenJDK   https://jdk.java.net/"
+echo -e "[2] Azule OpenJDK    https://www.azul.com/downloads/"
+echo -e "[3] Adoptium OpenJDK https://adoptium.net/"
 
 fi
 
@@ -478,31 +528,148 @@ function unique_words
 
 function getDownloadablePadogridVersions
 {
-  local ALL_PADOGRID_VERSIONS=$(curl -s $PADOGRID_DOWNLOAD_URL |grep "padogrid_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' -e 's/\.tar\.gz.*//' -e 's/\/padoweb.*//' -e 's/\/pado_.*//' -e 's/\/pado\-desktop.*//')
-  unique_words "$ALL_PADOGRID_VERSIONS"
+   local is_next_page="true"
+   local page=1
+   local ALL_PADOGRID_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${PADOGRID_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "padogrid_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' -e 's/\.tar\.gz.*//' -e 's/\/padoweb.*//' -e 's/\/pado_.*//' -e 's/\/pado\-desktop.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -s $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  |grep "padogrid_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' -e 's/\.tar\.gz.*//' -e 's/\/padoweb.*//' -e 's/\/pado_.*//' -e 's/\/pado\-desktop.*//')
+               versions=$(unique_words "$versions")
+               ALL_PADOGRID_VERSIONS="$ALL_PADOGRID_VERSIONS $versions"
+            done
+         fi
+      else
+         ALL_PADOGRID_VERSIONS="$ALL_PADOGRID_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_PADOGRID_VERSIONS"
 }
 
 function getDownloadablePadoVersions
 {
-  #local ALL_PADO_VERSIONS=$(curl -s $PADO_DOWNLOAD_URL |grep "pado_" | grep '\.tar\.gz' | sed -e 's/.*pado_//' -e 's/\.tar\.gz.*//')
-  local ALL_PADO_VERSIONS=$(curl -s $PADO_DOWNLOAD_URL |grep "pado_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/pado_.*" | sed -e 's/\.tar\.gz.*//')
-  unique_words "$ALL_PADO_VERSIONS"
+   local is_next_page="true"
+   local page=1
+   local ALL_PADO_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${PADO_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "pado_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/pado_.*" | sed -e 's/\.tar\.gz.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -s $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  | grep "pado_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/pado_.*" | sed -e 's/\.tar\.gz.*//')
+               if [ "$versions" != "" ]; then
+                  ALL_PADO_VERSIONS="$ALL_PADO_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_PADO_VERSIONS="$ALL_PADO_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_PADO_VERSIONS"
 }
 
 function getDownloadablePadowebVersions
 {
-  #local ALL_PADOWEB_VERSIONS=$(curl -s $PADOWEB_DOWNLOAD_URL |grep "padoweb_" | grep '\.tar\.gz' | sed -e 's/.*padoweb_//' -e 's/\.tar\.gz.*//')
-  local ALL_PADOWEB_VERSIONS=$(curl -s $PADOWEB_DOWNLOAD_URL |grep "padoweb_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/padoweb_.*" | sed -e 's/\.tar\.gz.*//')
-  unique_words "$ALL_PADOWEB_VERSIONS"
+   local is_next_page="true"
+   local page=1
+   local ALL_PADOWEB_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${PADOWEB_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "padoweb_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/padoweb_.*" | sed -e 's/\.tar\.gz.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -sL $download_url | grep "padoweb_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/padoweb_.*" | sed -e 's/\.tar\.gz.*//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  | grep "padoweb_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/padoweb_.*" | sed -e 's/\.tar\.gz.*//')
+               if [ "$versions" != "" ]; then
+                  ALL_PADOWEB_VERSIONS="$ALL_PADOWEB_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_PADOWEB_VERSIONS="$ALL_PADOWEB_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_PADOWEB_VERSIONS"
 }
 
 function getDownloadablePadodesktopVersions
 {
-  #local ALL_PADODESKTOP_VERSIONS=$(curl -s $PADODESKTOP_DOWNLOAD_URL |grep "pado-desktop_" | grep '\.tar\.gz' | sed -e 's/.*pad-desktop_//' -e 's/\.tar\.gz.*//')
-  local ALL_PADODESKTOP_VERSIONS=$(curl -s $PADODESKTOP_DOWNLOAD_URL |grep "pado-desktop_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/pado-desktop_.*" | sed -e 's/\.tar\.gz.*//')
-  unique_words "$ALL_PADODESKTOP_VERSIONS"
+   local is_next_page="true"
+   local page=1
+   local ALL_PADODESKTOP_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${PADODESKTOP_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "pado-desktop_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/pado-desktop_.*" | sed -e 's/\.tar\.gz.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -sL $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url | grep "pado-desktop_" | grep '\.tar\.gz' | sed -e 's/.*padogrid_//' | grep "\/pado-desktop_.*" | sed -e 's/\.tar\.gz.*//')
+               if [ "$versions" != "" ]; then
+                  ALL_PADODESKTOP_VERSIONS="$ALL_PADODESKTOP_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_PADODESKTOP_VERSIONS="$ALL_PADODESKTOP_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_PADODESKTOP_VERSIONS"
 }
 
+function getDownloadablePadoEclipseVersions
+{
+   local is_next_page="true"
+   local page=1
+   local ALL_PADOECLIPSE_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${PADOECLIPSE_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "com.netcrest.pado.eclipse_" | grep '\.jar' |  sed -e 's/.*padogrid_//' |  grep "\/com.netcrest.pado.eclipse_.*" | sed -e 's/\.jar.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -sL $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  | grep "com.netcrest.pado.eclipse_" | grep '\.jar' |  sed -e 's/.*padogrid_//' |  grep "\/com.netcrest.pado.eclipse_.*" | sed -e 's/\.jar.*//')
+               if [ "$versions" != "" ]; then
+                  ALL_PADOECLIPSE_VERSIONS="$ALL_PADOECLIPSE_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_PADOECLIPSE_VERSIONS="$ALL_PADOECLIPSE_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_PADOECLIPSE_VERSIONS"
+}
+ 
 function getDownloadableGeodeVersions
 {
    local ALL_GEODE_VERSIONS=$(curl -sL $GEODE_DOWNLOAD_URL |grep img | grep -v unknown | grep -v incubating | sed -e 's/.*>1./1./' -e 's/\/.*//' | grep -v img)
@@ -511,33 +678,58 @@ function getDownloadableGeodeVersions
 
 function getDownloadableHazelcastEnterpriseVersions
 {
-   local ALL_HAZELCAST_ENTERPRISE_VERSIONS=$(curl -sL $HAZELCAST_ENTERPRISE_DOWNLOAD_URL | grep "hazelcast-enterprise-" | grep "tar.gz" | sed -e 's/.*hazelcast-enterprise-//' -e 's/\.tar\.gz.*//')
+   #local ALL_HAZELCAST_ENTERPRISE_VERSIONS=$(curl -sL $HAZELCAST_ENTERPRISE_DOWNLOAD_URL | grep "hazelcast-enterprise-" | grep "tar.gz" | sed -e 's/.*hazelcast-enterprise-//' -e 's/\.tar\.gz.*//')
+   local ALL_HAZELCAST_ENTERPRISE_VERSIONS=$(curl -sL $HAZELCAST_ENTERPRISE_DOWNLOAD_URL | grep .tar.gz | sed -e 's/^.*hazelcast-enterprise-//' -e 's/.tar.gz.*//' -e '/href/d')
    unique_words "$ALL_HAZELCAST_ENTERPRISE_VERSIONS"
 }
 
 function getDownloadableHazelcastOssVersions
 {
-  local ALL_HAZELCAST_OSS_VERSIONS_5=$(curl -sL $HAZELCAST_OSS_DOWNLOAD_URL | grep "Platform 5" | sed -e 's/.*Platform 5/5/' -e 's/<.*//')
-  local ALL_HAZELCAST_OSS_VERSIONS_5_SLIM=""
-  for i in $ALL_HAZELCAST_OSS_VERSIONS_5; do
-     ALL_HAZELCAST_OSS_VERSIONS_5_SLIM="$ALL_HAZELCAST_OSS_VERSIONS_5_SLIM $i-slim"
-  done
-  local ALL_HAZELCAST_OSS_VERSIONS_4=$(curl -sL $HAZELCAST_OSS_DOWNLOAD_URL | grep "IMDG 4" | sed -e 's/.*IMDG 4/4/' -e 's/<.*//')
-  local ALL_HAZELCAST_OSS_VERSIONS_3=$(curl -sL $HAZELCAST_OSS_DOWNLOAD_URL | grep "IMDG 3" | sed -e 's/.*IMDG 3/3/' -e 's/<.*//')
-  ALL_HAZELCAST_OSS_VERSIONS="$ALL_HAZELCAST_OSS_VERSIONS_5 $ALL_HAZELCAST_OSS_VERSIONS_5_SLIM $ALL_HAZELCAST_OSS_VERSIONS_4 $ALL_HAZELCAST_OSS_VERSIONS_3"
-  unique_words "$ALL_HAZELCAST_OSS_VERSIONS"
+   local ALL_HAZELCAST_OSS_VERSIONS_5=$(curl -sL $HAZELCAST_OSS_DOWNLOAD_URL | grep "Platform 5" | sed -e 's/.*Platform 5/5/' -e 's/<.*//')
+   local ALL_HAZELCAST_OSS_VERSIONS_5_SLIM=""
+   for i in $ALL_HAZELCAST_OSS_VERSIONS_5; do
+      ALL_HAZELCAST_OSS_VERSIONS_5_SLIM="$ALL_HAZELCAST_OSS_VERSIONS_5_SLIM $i-slim"
+   done
+   local ALL_HAZELCAST_OSS_VERSIONS_4=$(curl -sL $HAZELCAST_OSS_DOWNLOAD_URL | grep "IMDG 4" | sed -e 's/.*IMDG 4/4/' -e 's/<.*//')
+   local ALL_HAZELCAST_OSS_VERSIONS_3=$(curl -sL $HAZELCAST_OSS_DOWNLOAD_URL | grep "IMDG 3" | sed -e 's/.*IMDG 3/3/' -e 's/<.*//')
+   ALL_HAZELCAST_OSS_VERSIONS="$ALL_HAZELCAST_OSS_VERSIONS_5 $ALL_HAZELCAST_OSS_VERSIONS_5_SLIM $ALL_HAZELCAST_OSS_VERSIONS_4 $ALL_HAZELCAST_OSS_VERSIONS_3"
+   unique_words "$ALL_HAZELCAST_OSS_VERSIONS"
 }
 
 function getDownloadableHazelcastManCenterVersions
 {
-  local ALL_HAZELCAST_MANAGEMENT_CENTER_VERSIONS=$(curl -sL $HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_URL | grep hazelcast-management-center | grep "tar.gz" |  sed -e 's/.*hazelcast-management-center-//' -e 's/\.tar\.gz.*//')
-  unique_words "$ALL_HAZELCAST_MANAGEMENT_CENTER_VERSIONS"
+   local ALL_HAZELCAST_MANAGEMENT_CENTER_VERSIONS=$(curl -sL $HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_URL | grep hazelcast-management-center | grep "tar.gz" |  sed -e 's/.*hazelcast-management-center-//' -e 's/\.tar\.gz.*//')
+   curl -sL "https://hazelcast.com/open-source-projects/downloads/archives/#hazelcast-management-center" | grep "management-center" | grep tar.gz | sed -e 's/.*management-center-//' -e 's/.tar.gz.*//'
+   unique_words "$ALL_HAZELCAST_MANAGEMENT_CENTER_VERSIONS"
 }
 
 function getDownloadableHazelcastDesktopVersions
 {
-  local ALL_HAZELCAST_DESKTOP_VERSIONS=$(curl -s $HAZELCAST_DESKTOP_DOWNLOAD_URL |grep "hazelcast-desktop_" | grep '\.tar\.gz' | sed -e 's/.*hazelcast-desktop_//' -e 's/\.tar\.gz.*//')
-  unique_words "$ALL_HAZELCAST_DESKTOP_VERSIONS"
+   local is_next_page="true"
+   local page=1
+   local ALL_HAZELCAST_DESKTOP_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${HAZELCAST_DESKTOP_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -s $download_url | grep "hazelcast-desktop_" | grep '\.tar\.gz' | sed -e 's/.*hazelcast-desktop_//' -e 's/\.tar\.gz.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -sL $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  | grep "hazelcast-desktop_" | grep '\.tar\.gz' | sed -e 's/.*hazelcast-desktop_//' -e 's/\.tar\.gz.*//')
+               if [ "$versions" != "" ]; then
+                  ALL_HAZELCAST_DESKTOP_VERSIONS="$ALL_HAZELCAST_DESKTOP_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_HAZELCAST_DESKTOP_VERSIONS="$ALL_HAZELCAST_DESKTOP_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_HAZELCAST_DESKTOP_VERSIONS"
 }
 
 function getDownloadableJetEnterpriseVersions
@@ -548,13 +740,91 @@ function getDownloadableJetEnterpriseVersions
 
 function getDownloadableJetOssVersions
 {
-   local ALL_JET_OSS_VERSIONS=$(curl -sL $JET_OSS_DOWNLOAD_URL |grep "hazelcast-jet-" | grep '\.tar\.gz' | sed -e 's/.*hazelcast-jet-//' -e 's/\.tar\.gz.*//' | grep -v elastic)
+   local is_next_page="true"
+   local page=1
+   local ALL_JET_OSS_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${JET_OSS_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "hazelcast-jet-" | grep '\.tar\.gz' | sed -e 's/.*hazelcast-jet-//' -e 's/\.tar\.gz.*//' | grep -v elastic)
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -s $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  | grep "hazelcast-jet-" | grep '\.tar\.gz' | sed -e 's/.*hazelcast-jet-//' -e 's/\.tar\.gz.*//' | grep -v elastic)
+               if [ "$versions" != "" ]; then
+                  ALL_JET_OSS_VERSIONS="$ALL_JET_OSS_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_JET_OSS_VERSIONS="$ALL_JET_OSS_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
    unique_words "$ALL_JET_OSS_VERSIONS"
+}
+
+function getDownloadableRedisVersions
+{
+   local is_next_page="true"
+   local page=1
+   local ALL_REDIS_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${REDIS_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url |  grep '\.tar\.gz' | sed -e 's/\.tar.*$//' -e 's/.*\///')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -s $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            versions=$(echo $assets_urls | sed 's/http:.*expanded_assets//g')
+            for url in $assets_urls; do
+               versions=$(echo $url | sed 's|.*expanded_assets/||')
+               # The following check tar ball - not necessary, takes long time
+               # versions=$(curl -sL $url |  grep '\.tar\.gz' | sed -e 's/\.tar.*$//' -e 's/.*\///')
+               if [ "$versions" != "" ]; then
+                  ALL_REDIS_VERSIONS="$ALL_REDIS_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_REDIS_VERSIONS="$ALL_REDIS_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
+   unique_words "$ALL_REDIS_VERSIONS"
 }
 
 function getDownloadableSnappyDataVersions
 {
-   local ALL_SNAPPYDATA_VERSIONS=$(curl -sL $SNAPPYDATA_DOWNLOAD_URL | grep "snappydata-" | grep "tar.gz" | grep -v ec2 | sed -e 's/.*snappydata-//' -e 's/\.tar\.gz.*//')
+   local is_next_page="true"
+   local page=1
+   local ALL_SNAPPYDATA_VERSIONS=""
+   while [ "$is_next_page" == "true" ]; do
+      download_url="${SNAPPYDATA_DOWNLOAD_URL}?page=$page"
+      local PAGE_VERSIONS=$(curl -sL $download_url | grep "snappydata-" | grep "tar.gz" | grep -v ec2 | sed -e 's/.*snappydata-//' -e 's/\.tar\.gz.*//')
+      PAGE_VERSIONS=$(unique_words "$PAGE_VERSIONS")
+      if [ "$PAGE_VERSIONS" == "" ]; then
+         local assets_urls=$(curl -s $download_url | grep "expanded_assets" | sed -e 's/^.*src="//g' -e 's/".*$//')
+         if [ "$assets_urls" == "" ]; then
+            is_next_page="false"
+         else
+            for url in $assets_urls; do
+               versions=$(curl -sL $url  | grep "snappydata-" | grep "tar.gz" | grep -v ec2 | sed -e 's/.*snappydata-//' -e 's/\.tar\.gz.*//')
+               if [ "$versions" != "" ]; then
+                  ALL_SNAPPYDATA_VERSIONS="$ALL_SNAPPYDATA_VERSIONS $versions"
+               fi
+            done
+         fi
+      else
+         ALL_SNAPPYDATA_VERSIONS="$ALL_SNAPPYDATA_VERSIONS $PAGE_VERSIONS"
+      fi
+      let page=page+1
+   done
    unique_words "$ALL_SNAPPYDATA_VERSIONS"
 }
 
@@ -633,6 +903,7 @@ function sortVersionList
 #    HAZELCAST_DESKTOP_VERSIONS
 #    JET_ENTERPRISE_VERSIONS
 #    JET_OSS_VERSIONS
+#    REDIS_VERSIONS
 #    SNAPPYDATA_VERSIONS
 #    SPARK_VERSIONS
 #    KAFKA_VERSIONS
@@ -649,11 +920,12 @@ function determineInstalledProductVersions
    GEMFIRE_VERSIONS=""
    GEODE_VERSIONS=""
    HAZELCAST_ENTERPRISE_VERSIONS=""
+   HAZELCAST_OSS_VERSIONS=""
    HAZELCAST_MANAGEMENT_CENTER_VERSIONS=""
    HAZELCAST_DESKTOP_CENTER_VERSIONS=""
    JET_ENTERPRISE_VERSIONS=""
    JET_OSS_VERSIONS=""
-   HAZELCAST_OSS_VERSIONS=""
+   REDIS_VERSIONS=""
    SNAPPYDATA_VERSIONS=""
    SPARK_VERSIONS=""
    KAFKA_VERSIONS=""
@@ -746,6 +1018,14 @@ function determineInstalledProductVersions
       JET_ENTERPRISE_VERSIONS=$(sortVersionList "$jenterv")
       JET_OSS_VERSIONS=$(sortVersionList "$jossv")
       HAZELCAST_OSS_VERSIONS=$(sortVersionList "$hossv")
+
+      # Redis
+      __versions=""
+      for i in redis-*; do
+         __version=${i#redis-}
+         __versions="$__versions $__version "
+      done
+      REDIS_VERSIONS=$(sortVersionList "$__versions")
 
       # SnappyData
       __versions=""
@@ -892,11 +1172,32 @@ function doUserInput
    fi
 }
 
+# @required PRODUCT_DOWNLOAD_VERSIONS Downloadable product versions
+function saveDownloadableVersions
+{
+   PRODUCT_DOWNLOAD_VERSIONS
+}
+
 # Simulation message
 if [ "$SIMULATE" == "true" ]; then
    echo ""
-   echo -e "${CBrownOrange}Simulation Only. You have specified the '-simulate' option. File downloads will be"
-   echo -e "simulated and will not be downloaded.${CNone}"
+   if [ "$SAVE_SPECIFIED" == "true" ]; then
+      echo "You have specified both '-save' and '-simulate'. Simulation ignored."
+   else
+      echo -e "${CBrownOrange}Simulation Only. You have specified the '-simulate' option. File downloads will be"
+      echo -e "simulated and will not be downloaded.${CNone}"
+   fi
+fi
+
+if [ "$DOWNLOAD_VERSIONS_FILE" != "" ]; then
+   if [ ! -w "$DOWNLOAD_VERSIONS_FILE" ]; then
+      echo -e "${CError}ERROR:${CNone} Invalid file path. You do not have write permissions."
+      echo "   $DOWNLOAD_VERSIONS_FILE"
+      exit 1
+   fi
+   echo ""
+   echo "Product versions will be saved in the specified file."
+   echo "   $DOWNLOAD_VERSIONS_FILE"
 fi
 
 #
@@ -907,7 +1208,9 @@ echo "Scanning downloadable products... Please wait."
 echo ""
 
 # Turn off the enter key while waiting
-stty igncr
+if [ "$NO_STTY_SPECIFIED" != "true" ]; then
+   stty igncr
+fi
 
 PADOGRID_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadablePadogridVersions)"))
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "pado" ]; then
@@ -919,29 +1222,35 @@ fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "padoweb" ]; then
    PADOWEB_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadablePadowebVersions)"))
 fi
+if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "padoeclipse" ]; then
+   PADOECLIPSE_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadablePadoEclipseVersions)"))
+fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "geode" ]; then
    GEODE_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableGeodeVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "hazelcast-enterprise" ]; then
-   HAZELCAST_ENTERPRISE_DOWNLOAD_VERSIONS=($(getDownloadableHazelcastEnterpriseVersions))
+   HAZELCAST_ENTERPRISE_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableHazelcastEnterpriseVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "hazelcast-oss" ]; then
-   HAZELCAST_OSS_DOWNLOAD_VERSIONS=($(getDownloadableHazelcastOssVersions))
+   HAZELCAST_OSS_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableHazelcastOssVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "hazelcast-mc" ]; then
-   HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_VERSIONS=($(getDownloadableHazelcastManCenterVersions))
+   HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableHazelcastManCenterVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "hazelcast-desktop" ]; then
-   HAZELCAST_DESKTOP_DOWNLOAD_VERSIONS=($(getDownloadableHazelcastDesktopVersions))
+   HAZELCAST_DESKTOP_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableHazelcastDesktopVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "jet-enterprise" ]; then
-   JET_ENTERPRISE_DOWNLOAD_VERSIONS=($(getDownloadableJetEnterpriseVersions))
+   JET_ENTERPRISE_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableJetEnterpriseVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "jet-oss" ]; then
-   JET_OSS_DOWNLOAD_VERSIONS=($(getDownloadableJetOssVersions))
+   JET_OSS_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableJetOssVersions)"))
+fi
+if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "redis-oss" ]; then
+   REDIS_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableRedisVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "snappydata" ]; then
-   SNAPPYDATA_DOWNLOAD_VERSIONS=($(getDownloadableSnappyDataVersions))
+   SNAPPYDATA_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableSnappyDataVersions)"))
 fi
 if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "spark" ]; then
    SPARK_DOWNLOAD_VERSIONS=($(sortVersionList "$(getDownloadableSparkVersions)"))
@@ -954,13 +1263,38 @@ if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "hadoop" ]; then
 fi
 
 # Enable the enter key
-stty -igncr
+if [ "$NO_STTY_SPECIFIED" != "true" ]; then
+   stty -igncr
+fi
+
+if [ "$SAVE_SPECIFIED" == "true" ]; then
+   echo "PADOGRID_DOWNLOAD_VERSIONS=${PADOGRID_DOWNLOAD_VERSIONS[@]}" > "$DOWNLOAD_VERSIONS_FILE"
+   echo "PADO_DOWNLOAD_VERSIONS=${PADO_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "PADODESKTOP_DOWNLOAD_VERSIONS=${PADODESKTOP_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "PADOWEB_DOWNLOAD_VERSIONS=${PADOWEB_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "PADOECLIPSE_DOWNLOAD_VERSIONS=${PADOECLIPSE_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "GEODE_DOWNLOAD_VERSIONS=${GEODE_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "HAZELCAST_ENTERPRISE_DOWNLOAD_VERSIONS=${HAZELCAST_ENTERPRISE_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "HAZELCAST_OSS_DOWNLOAD_VERSIONS=${HAZELCAST_OSS_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "HAZELCAST_DESKTOP_DOWNLOAD_VERSIONS=${HAZELCAST_DESKTOP_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "JET_ENTERPRISE_DOWNLOAD_VERSIONS=${JET_ENTERPRISE_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "JET_OSS_DOWNLOAD_VERSIONS=${JET_OSS_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "REDIS_DOWNLOAD_VERSIONS=${REDIS_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "SNAPPYDATA_DOWNLOAD_VERSIONS=${SNAPPYDATA_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "SPARK_DOWNLOAD_VERSIONS=${SPARK_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "KAFKA_DOWNLOAD_VERSIONS=${KAFKA_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "HADOOP_DOWNLOAD_VERSIONS=${HADOOP_DOWNLOAD_VERSIONS[@]}" >> "$DOWNLOAD_VERSIONS_FILE"
+   echo "Downloadable prodduct versions saved:"
+   echo "   + $DOWNLOAD_VERSIONS_FILE"
+   exit
+fi
 
 # Version variables set by user inputs
 PADOGRID_VERSION=""
 PADO_VERSION=""
 PADODESKTOP_VERSION=""
 PADOWEB_VERSION=""
+PADOECLIPSE_VERSION=""
 GEODE_VERSION=""
 HAZELCAST_ENTERPRISE_VERSION=""
 HAZELCAST_OSS_VERSION=""
@@ -968,6 +1302,7 @@ HAZELCAST_MANAGEMENT_CENTER_VERSION=""
 HAZELCAST_DESKTOP_VERSION=""
 JET_ENTERPRISE_VERSION=""
 JET_OSS_VERSION=""
+REDIS_VERSION=""
 SNAPPYDATA_VERSION=""
 SPARK_VERSION=""
 KAFKA_VERSION=""
@@ -976,16 +1311,31 @@ HADOOP_VERSION=""
 if [ "$QUIET" == "true" ]; then
    # Set to the latest versions
    PADOGRID_VERSION=${PADOGRID_DOWNLOAD_VERSIONS[0]}
+   if [[ "$PADOGRID_VERSION" == *"SNAPSHOT" ]]; then
+      PADOGRID_VERSION=${PADOGRID_DOWNLOAD_VERSIONS[1]} 
+   fi
    PADO_VERSION=${PADO_DOWNLOAD_VERSIONS[0]}
+   if [[ "$PADO_VERSION" == *"SNAPSHOT" ]]; then
+      PADO_VERSION=${PADO_DOWNLOAD_VERSIONS[1]} 
+   fi
    PADODESKTOP_VERSION=${PADODESKTOP_DOWNLOAD_VERSIONS[0]}
+   if [[ "$PADODESKTOP_VERSION" == *"SNAPSHOT" ]]; then
+      PADODESKTOP_VERSION=${PADODESKTOP_DOWNLOAD_VERSIONS[1]} 
+   fi
    PADOWEB_VERSION=${PADOWEB_DOWNLOAD_VERSIONS[0]}
+   if [[ "$PADOWEB_VERSION" == *"SNAPSHOT" ]]; then
+      PADOWEB_VERSION=${PADOWEB_DOWNLOAD_VERSIONS[1]} 
+   fi
+   PADOECLIPSE_VERSION=${PADOECLIPSE_DOWNLOAD_VERSIONS[0]}
    GEODE_VERSION=${GEODE_DOWNLOAD_VERSIONS[0]}
    HAZELCAST_ENTERPRISE_VERSION=${HAZELCAST_ENTERPRISE_DOWNLOAD_VERSIONS[0]}
    HAZELCAST_OSS_VERSION=${HAZELCAST_OSS_DOWNLOAD_VERSIONS[0]}
    HAZELCAST_MANAGEMENT_CENTER_VERSION=${HAZELCAST_MANAGEMENT_CENTER_DOWNLOAD_VERSIONS[0]}
+
    HAZELCAST_DESKTOP_VERSION=${HAZELCAST_DESKTOP_DOWNLOAD_VERSIONS[0]}
    JET_ENTERPRISE_VERSION=${JET_ENTERPRISE_DOWNLOAD_VERSIONS[0]}
    JET_OSS_VERSION=${JET_OSS_DOWNLOAD_VERSIONS[0]}
+   REDIS_VERSION=${REDIS_DOWNLOAD_VERSIONS[0]}
    SNAPPYDATA_VERSION=${SNAPPYDATA_DOWNLOAD_VERSIONS[0]}
    SPARK_VERSION=${SPARK_DOWNLOAD_VERSIONS[0]}
    SPARK_DIST_VERSION=${SPARK_VERSION}
@@ -1001,6 +1351,7 @@ if [ "$QUIET" == "true" ]; then
    echo "Pado                 $PADO_VERSION"
    echo "PadoDesktop          $PADODESKTOP_VERSION"
    echo "PadoWeb              $PADOWEB_VERSION"
+   echo "PadoEclipse          $PADOECLIPSE_VERSION"
    echo "Geode                $GEODE_VERSION"
    echo "Hazelcast Enterprise $HAZELCAST_ENTERPRISE_VERSION"
    echo "Hazelcast OSS        $HAZELCAST_OSS_VERSION"
@@ -1008,6 +1359,7 @@ if [ "$QUIET" == "true" ]; then
    echo "HazelcastDesktop     $HAZELCAST_DESKTOP_VERSION"
    echo "Jet Enterprise       $JET_ENTERPRISE_VERSION"
    echo "Jet OSS              $JET_OSS_VERSION"
+   echo "Redis OSS            $REDIS_VERSION"
    echo "SnappyData           $SNAPPYDATA_VERSION"
    echo "Spark                $SPARK_VERSION"
    echo "Kafka                $KAFKA_VERSION"
@@ -1113,6 +1465,22 @@ while [ "$REDO" == "true" ]; do
       fi
    fi
 
+   # PadoEclipse
+   if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "padoeclipse" ]; then
+      PRODUCT_NAME="PadoEclipse"
+      PRODUCT_DOWNLOAD_VERSIONS=("${PADOECLIPSE_DOWNLOAD_VERSIONS[@]}")
+      if [ ${#PRODUCT_DOWNLOAD_VERSIONS[@]} -gt 0 ]; then
+      INSTALLED_VERSIONS=$PADOECLIPSE_VERSIONS
+      echo -e "PadoEclipse ${CUrl}$PADOECLIPSE_DOWNLOAD_URL${CNone}"
+      doUserInput
+      if [ "$INSTALL_VERSION" != "" ]; then
+         let INSTALL_COUNT=INSTALL_COUNT+1
+      fi
+      PADOECLIPSE_VERSION=$INSTALL_VERSION
+      echo ""
+      fi
+   fi
+
    # Geode
    if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "geode" ]; then
       PRODUCT_NAME="Geode"
@@ -1208,6 +1576,20 @@ while [ "$REDO" == "true" ]; do
          let INSTALL_COUNT=INSTALL_COUNT+1
       fi
       JET_OSS_VERSION=$INSTALL_VERSION
+      echo ""
+   fi
+
+   # Redis
+   if [ "$PRODUCT_ARG" == "" ] || [ "$PRODUCT_ARG" == "redis-oss" ]; then
+      PRODUCT_NAME="Redis"
+      PRODUCT_DOWNLOAD_VERSIONS=("${REDIS_DOWNLOAD_VERSIONS[@]}")
+      INSTALLED_VERSIONS=$REDIS_VERSIONS
+      echo -e "Redis ${CUrl}$REDIS_DOWNLOAD_URL${CNone}"
+      doUserInput
+      if [ "$INSTALL_VERSION" != "" ]; then
+         let INSTALL_COUNT=INSTALL_COUNT+1
+      fi
+      REDIS_VERSION=$INSTALL_VERSION
       echo ""
    fi
    
@@ -1381,6 +1763,9 @@ while [ "$REDO" == "true" ]; do
    if [ "$PADOWEB_VERSION" != "" ]; then
       echo -e "PadoWeb: ${CLightGreen}$PADOWEB_VERSION${CNone}"
    fi
+   if [ "$PADOECLIPSE_VERSION" != "" ]; then
+      echo -e "PadoEclipse: ${CLightGreen}$PADOECLIPSE_VERSION${CNone}"
+   fi
    if [ "$GEODE_VERSION" != "" ]; then
       echo -e "Geode: ${CLightGreen}$GEODE_VERSION${CNone}"
    fi
@@ -1401,6 +1786,9 @@ while [ "$REDO" == "true" ]; do
    fi
    if [ "$JET_OSS_VERSION" != "" ]; then
       echo -e "Jet OSS: ${CLightGreen}$JET_OSS_VERSION${CNone}"
+   fi
+   if [ "$REDIS_VERSION" != "" ]; then
+      echo -e "Redis: ${CLightGreen}$REDIS_VERSION${CNone}"
    fi
    if [ "$SNAPPYDATA_VERSION" != "" ]; then
       echo -e "SnappyData: ${CLightGreen}$SNAPPYDATA_VERSION${CNone}"
@@ -1455,6 +1843,10 @@ fi
 # @required PADOWEB_RELEASE
 # @required PADOWEB_TARBALL
 #
+# @required PADOECLIPSE_DOWNLOAD_URL
+# @required PADOECLIPSE_RELEASE
+# @required PADOECLIPSE_TARBALL
+#
 # @required GEODE_VERSION
 # @required GEODE_TARBALL
 #
@@ -1473,6 +1865,9 @@ fi
 #
 # @required JET_MC_RELEASE
 # @required JET_MC_TARBALL
+#
+# @required REDIS_RELEASE
+# @required REDIS_TARBALL
 #
 # @required SNAPPYDATA_RELEASE
 # @required SNAPPYDATA_TARBALL
@@ -1497,23 +1892,28 @@ function installProduct
       if [ "$QUIET" == "true" ] &&  [ -d "$PADOGRID_PRODUCTS_PATH/$PADOGRID_RELEASE" ]; then
          echo "Already installed - $PADOGRID_RELEASE"
       else
-      # --------------
-      # Download PadoGrid
-      echo "+ Downloading $PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL..."
-      if [ "$__SIMULATE" == "true" ]; then
-         echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL" "https://github.com/padogrid/padogrid/releases/download/$PADOGRID_RELEASE/$PADOGRID_TARBALL"
-      else
-         curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL" "https://github.com/padogrid/padogrid/releases/download/$PADOGRID_RELEASE/$PADOGRID_TARBALL"
-      fi
+         # --------------
+         # Download PadoGrid
+         echo "+ Downloading $PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL..."
+         if [[ "$PADOGRID_RELEASE" == *"SNAPSHOT" ]]; then
+            local VDIR="snapshot"
+         else
+            local VDIR="$PADOGRID_RELEASE"
+         fi
+         if [ "$__SIMULATE" == "true" ]; then
+            echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL" "https://github.com/padogrid/padogrid/releases/download/$VDIR/$PADOGRID_TARBALL"
+         else
+            curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL" "https://github.com/padogrid/padogrid/releases/download/$VDIR/$PADOGRID_TARBALL"
+         fi
       
-      # Install PadoGrid
-      echo "  Installing PadoGrid $PADOGRID_TARBALL in $PADOGRID_PRODUCTS_PATH/..."
-      if [ "$__SIMULATE" == "true" ]; then
-         echo tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL"
-      else
-         tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL"
-         echo "  Installed - $PADOGRID_TARBALL"
-      fi
+         # Install PadoGrid
+         echo "  Installing PadoGrid $PADOGRID_TARBALL in $PADOGRID_PRODUCTS_PATH/..."
+         if [ "$__SIMULATE" == "true" ]; then
+            echo tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL"
+         else
+            tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$PADOGRID_TARBALL"
+            echo "  Installed - $PADOGRID_TARBALL"
+         fi
       fi
 
    elif [ "$__PRODUCT" == "pado" ]; then 
@@ -1595,6 +1995,22 @@ function installProduct
             tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$FILE_NAME"
             echo "  Installed - $FILE_NAME"
          fi
+      fi
+
+   elif [ "$__PRODUCT" == "padoeclipse" ]; then 
+
+      # --------------
+      # Download PadoEclipse (Download only. Manual installation required)
+      local FILE_NAME=${PADOECLIPSE_JAR#*/}
+      echo "+ Downloading $PADOGRID_DOWNLOADS_PATH/$FILE_NAME..."
+      if [ "$__SIMULATE" == "true" ]; then
+         echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$FILE_NAME" "https://github.com/padogrid/padogrid/releases/download/$PADOECLIPSE_JAR"
+      else
+         curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$FILE_NAME" "https://github.com/padogrid/padogrid/releases/download/$PADOECLIPSE_JAR"
+         echo "  Downloaded - $FILE_NAME"
+         echo -e "  ${CBrownOrange}To install the downloaded PadoEclipse plugin, place it in the Eclipse's 'dropins' folder.${CNone}"
+         echo -e "  ${CBrownOrange}See the following link for instructions.${CNone}"
+         echo -e "     ${CUrl}$PADOECLIPSE_MANUAL_URL${CNone}"
       fi
       
    elif [ "$__PRODUCT" == "geode" ]; then 
@@ -1771,6 +2187,31 @@ function installProduct
       fi
       fi
 
+   elif [ "$__PRODUCT" == "redis-oss" ]; then 
+      
+      if [ "$QUIET" == "true" ] &&  [ -d "$PADOGRID_PRODUCTS_PATH/$REDIS_RELEASE" ]; then
+         echo "Already installed - $REDIS_RELEASE"
+      else
+      # --------------
+      # Download Redis
+      echo "+ Downloading $PADOGRID_DOWNLOADS_PATH/$REDIS_TARBALL..."
+      SNAPPY_VDIR="v${REDIS_VERSION%-bin}"
+      if [ "$__SIMULATE" == "true" ]; then
+         echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$REDIS_TARBALL" "https://github.com/redis/redis/archive/refs/tags/$REDIS_VERSION.tar.gz"
+      else
+         curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$REDIS_TARBALL" "https://github.com/redis/redis/archive/refs/tags/$REDIS_VERSION.tar.gz"
+      fi
+      
+      # Install Redis
+      echo "  Installing SnappyData $REDIS_TARBALL in $PADOGRID_PRODUCTS_PATH/..."
+      if [ "$__SIMULATE" == "true" ]; then
+         echo tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$REDIS_TARBALL"
+      else
+         tar -C $PADOGRID_PRODUCTS_PATH -xzf "$PADOGRID_DOWNLOADS_PATH/$REDIS_TARBALL"
+         echo "  Installed - $REDIS_TARBALL"
+      fi
+      fi
+
    elif [ "$__PRODUCT" == "snappydata" ]; then 
       
       if [ "$QUIET" == "true" ] &&  [ -d "$PADOGRID_PRODUCTS_PATH/$SNAPPYDATA_RELEASE" ]; then
@@ -1779,10 +2220,13 @@ function installProduct
       # --------------
       # Download SnappyData
       echo "+ Downloading $PADOGRID_DOWNLOADS_PATH/$SNAPPYDATA_TARBALL..."
+      SNAPPY_VDIR="v${SNAPPYDATA_VERSION%-bin}"
+      # Remove hot release part
+      SNAPPY_VDIR="$(echo $SNAPPY_VDIR | sed 's/-.*$//')"
       if [ "$__SIMULATE" == "true" ]; then
-         echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$SNAPPYDATA_TARBALL" "https://github.com/TIBCOSoftware/snappydata/releases/download/v$SNAPPYDATA_VERSION/$SNAPPYDATA_TARBALL"
+         echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$SNAPPYDATA_TARBALL" "https://github.com/TIBCOSoftware/snappydata/releases/download/$SNAPPY_VDIR/$SNAPPYDATA_TARBALL"
       else
-         curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$SNAPPYDATA_TARBALL" "https://github.com/TIBCOSoftware/snappydata/releases/download/v$SNAPPYDATA_VERSION/$SNAPPYDATA_TARBALL"
+         curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$SNAPPYDATA_TARBALL" "https://github.com/TIBCOSoftware/snappydata/releases/download/$SNAPPY_VDIR/$SNAPPYDATA_TARBALL"
       fi
       
       # Install SnappyData
@@ -1851,7 +2295,7 @@ function installProduct
          # --------------
          # Download Hadoop
          echo "+ Downloading $PADOGRID_DOWNLOADS_PATH/$HADOOP_TARBALL..."
-         echo "  Hadoop is known to take a long time (~50 minutes) to download."
+         echo "  Hadoop is known to take a long time to download."
          if [ "$__SIMULATE" == "true" ]; then
             echo curl -sL -o "$PADOGRID_DOWNLOADS_PATH/$HADOOP_TARBALL" "https://archive.apache.org/dist/hadoop/common/$HADOOP_RELEASE/$HADOOP_TARBALL"
          else
@@ -1940,6 +2384,12 @@ if [ "$PADOWEB_VERSION" != "" ]; then
    PADOWEB_TARBALL="padogrid_$PADOWEB_VERSION.tar.gz"
    installProduct "padoweb" "$SIMULATE"
 fi
+if [ "$PADOECLIPSE_VERSION" != "" ]; then
+   #PADOECLIPSE_RELEASE="com.netcrest.pado.eclipse_$PADOECLIPSE_VERSION"
+   PADOECLIPSE_RELEASE="${PADOECLIPSE_VERSION#*/}"
+   PADOECLIPSE_JAR="padogrid_$PADOECLIPSE_VERSION.jar"
+   installProduct "padoeclipse" "$SIMULATE"
+fi
 if [ "$GEODE_VERSION" != "" ]; then
    GEODE_RELEASE="apache-geode-$GEODE_VERSION"
    GEODE_TARBALL="$GEODE_RELEASE.tgz"
@@ -1975,10 +2425,15 @@ if [ "$JET_OSS_VERSION" != "" ]; then
    JET_OSS_TARBALL="$JET_OSS_RELEASE.tar.gz"
    installProduct "jet-oss" "$SIMULATE"
 fi
+if [ "$REDIS_VERSION" != "" ]; then
+   REDIS_RELEASE="redis-$REDIS_VERSION"
+   REDIS_TARBALL="$REDIS_RELEASE.tar.gz"
+   installProduct "redis-oss" "$SIMULATE"
+fi
 if [ "$SNAPPYDATA_VERSION" != "" ]; then
    SNAPPYDATA_RELEASE="snappydata-$SNAPPYDATA_VERSION"
    SNAPPYDATA_TARBALL="$SNAPPYDATA_RELEASE.tar.gz"
-   installProduct "snappydata"
+   installProduct "snappydata" "$SIMULATE"
 fi
 if [ "$SPARK_VERSION" != "" ] && [ "$SPARK_DIST_VERSION" != "" ]; then
    SPARK_RELEASE="spark-$SPARK_VERSION"
@@ -1995,8 +2450,17 @@ if [ "$HADOOP_VERSION" != "" ]; then
    HADOOP_TARBALL="hadoop-$HADOOP_VERSION.tar.gz"
    installProduct "hadoop" "$SIMULATE"
 fi
-echo ""
 
+# Redis distribution contains source code only. Tell the user how to build.
+if [ "$REDIS_VERSION" != "" ]; then
+   echo ""
+   echo "Redis OSS downloads do not include binaries. You can build binaries by"
+   echo -e "running ${CLightGreen}make${CNone} as follows."
+   echo ""
+   echo -e "   ${CLightGreen}pushd $PADOGRID_PRODUCTS_PATH/$REDIS_RELEASE/ && make && popd ${CNone}"
+fi
+
+echo ""
 echo "PadoGrid Installation complete."
 echo ""
 
@@ -2026,6 +2490,7 @@ if [ "$RWE_EXISTS" == "false" ]; then
    JET_MC_HOME=""
    JET_HOME=""
    HAZELCAST_HOME=""
+   REDIS_HOME=""
    SNAPPYDATA_HOME=""
    SPARK_HOME=""
    KAFKA_HOME=""
@@ -2065,6 +2530,8 @@ if [ "$RWE_EXISTS" == "false" ]; then
      elif [[ "$i" == **"hazelcast"** ]]; then
        HAZELCAST_HOME="$PADOGRID_PRODUCTS_PATH/$i"
        HAZELCAST_OSS_HOME="$HAZELCAST_HOME"
+     elif [[ "$i" == **"redis"** ]]; then
+       REDIS_HOME="$PADOGRID_PRODUCTS_PATH/$i"
      elif [[ "$i" == **"snappydata"** ]]; then
        SNAPPYDATA_HOME="$PADOGRID_PRODUCTS_PATH/$i"
      elif [[ "$i" == **"spark"** ]]; then
@@ -2107,6 +2574,8 @@ if [ "$RWE_EXISTS" == "false" ]; then
         PRODUCT_HOME="$GEODE_HOME"
          elif [ "$JET_HOME" != "" ]; then
         PRODUCT_HOME="$JET_HOME"
+      elif [ "$REDIS_HOME" != "" ]; then
+        PRODUCT_HOME="$REDIS_HOME"
       elif [ "$SNAPPYDATA_HOME" != "" ]; then
         PRODUCT_HOME="$SNAPPYDATA_HOME"
       elif [ "$SPARK_HOME" != "" ]; then
@@ -2128,6 +2597,7 @@ if [ "$RWE_EXISTS" == "false" ]; then
       echo "HAZELCAST_DESKTOP_HOME=\"$HAZELCAST_DESKTOP_HOME\"" >> $TMP_ENV_FILE
       echo "JET_HOME=\"$JET_HOME\"" >> $TMP_ENV_FILE
       echo "JET_MC_HOME=\"$JET_MC_HOME\"" >> $TMP_ENV_FILE
+      echo "REDIS_HOME=\"$REDIS_HOME\"" >> $TMP_ENV_FILE
       echo "SNAPPYDATA_HOME=\"$SNAPPYDATA_HOME\"" >> $TMP_ENV_FILE
       echo "SPARK_HOME=\"$SPARK_HOME\"" >> $TMP_ENV_FILE
       echo "KAFKA_HOME=\"$SPARK_HOME\"" >> $TMP_ENV_FILE
