@@ -1190,7 +1190,8 @@ if [ "$SIMULATE" == "true" ]; then
 fi
 
 if [ "$DOWNLOAD_VERSIONS_FILE" != "" ]; then
-   if [ ! -w "$DOWNLOAD_VERSIONS_FILE" ]; then
+   __DIR=$(dirname $DOWNLOAD_VERSIONS_FILE)
+   if [ ! -w "$__DIR" ]; then
       echo -e "${CError}ERROR:${CNone} Invalid file path. You do not have write permissions."
       echo "   $DOWNLOAD_VERSIONS_FILE"
       exit 1
