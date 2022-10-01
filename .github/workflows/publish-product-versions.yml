@@ -13,6 +13,7 @@ jobs:
 
       - name: Step 1 - Create a temporary artifact downloads folder
         run: mkdir downloads
+        curl -fsSL https://raw.githubusercontent.com/padogrid/padogrid/develop/padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid | /bin/bash -s -- -no-stty -quiet -save downloads/padogrid_download_versions.sh
         
       - name: step 2 - Add artifacts to publish to the temp folder
         run: |
@@ -20,8 +21,6 @@ jobs:
           echo 'alpha'    > alpha.html
           echo 'bravo'    > bravo.html
           echo 'charlie'  > charlie.html
-          chmod 755 padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid
-          padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid -save padogrid_download_versions.sh
           cd ..
     
       - name: Step 3 - Use the Upload Artifact GitHub Action
