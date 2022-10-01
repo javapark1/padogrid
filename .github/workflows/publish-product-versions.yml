@@ -29,12 +29,12 @@ jobs:
           name: assets-for-download
           path: downloads
 
-    - name: Step 4 - Upload padogrid_download_versions.sh to the branch release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: downloads/padogrid_download_versions.sh
-        asset_name: padogrid_download_versions.sh
-        tag: ${{ github.ref }}
-        overwrite: true
-        body: "PadoGrid downlodable product versions"
+      - name: Step 4 - Upload padogrid_download_versions.sh to the branch release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: downloads/padogrid_download_versions.sh
+          asset_name: padogrid_download_versions.sh
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "PadoGrid downlodable product versions"
