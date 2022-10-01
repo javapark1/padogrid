@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Step 1 - Create an artifact downloads folder and run install_padogrid -save padogrid_download_versions.sh
+      - name: Step 1 - Run install_padogrid -save padogrid_download_versions.sh
         run: |
           mkdir downloads
           curl -fsSL https://raw.githubusercontent.com/javapark1/padogrid/develop/padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid | /bin/bash -s -- -no-stty -quiet -save downloads/padogrid_download_versions.sh
