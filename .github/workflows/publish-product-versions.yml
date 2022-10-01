@@ -14,7 +14,7 @@ jobs:
       - name: Step 1 - Create a temporary artifact downloads folder
         run: |
           mkdir downloads
-          curl -fsSL https://raw.githubusercontent.com/padogrid/padogrid/develop/padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid | /bin/bash -s -- -no-stty -quiet -save downloads/padogrid_download_versions.sh
+          curl -fsSL https://raw.githubusercontent.com/javapark1/padogrid/develop/padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid | /bin/bash -s -- -no-stty -quiet -save downloads/padogrid_download_versions.sh
         
       - name: step 2 - Add artifacts to publish to the temp folder
         run: |
