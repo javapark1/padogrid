@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Step 1 - Run install_padogrid -scan 5 -save padogrid_download_versions.sh
+      - name: Step 1 - Run install_padogrid -scan 10 -save padogrid_download_versions.sh
         run: |
           curl -fsSL https://raw.githubusercontent.com/padogrid/padogrid/develop/padogrid-deployment/src/main/resources/common/bin_sh/install_padogrid | /bin/bash -s -- -no-stty -quiet -scan -save padogrid_download_versions.sh
         
