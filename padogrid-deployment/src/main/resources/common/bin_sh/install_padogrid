@@ -17,6 +17,9 @@
 # ========================================================================
 
 SCRIPT_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+
+SLEEP_DELAY=2
+
 if [ -f "$SCRIPT_DIR/.addonenv.sh" ] && [ -f "$SCRIPT_DIR/.argenv.sh" ]; then
    . $SCRIPT_DIR/.addonenv.sh
    IS_STANDALONE_SCRIPT="false"
@@ -31,6 +34,8 @@ else
    SAVE_ARG=""
    LOAD_SPECIFIED="false"
    LOAD_ARG=""
+   DELAY_SPECIFIED="false"
+   SCAN_ARG=""
    PREV=""
    for i in "$@"; do
       case $i in
@@ -39,7 +44,8 @@ else
          -no-stty ) NO_STTY_SPECIFIED="true";;
          -scan ) SCAN_SPECIFIED="true";;
          -save ) SAVE_SPECIFIED="true";;
-         -file ) LOAD_SPECIFIED="true";;
+         -load ) LOAD_SPECIFIED="true";;
+         -delay ) DELAY_SPECIFIED="true";;
          -version ) VERSION_SPECIFIED="true";;
          -?) HELP="true";;
          * ) 
@@ -49,6 +55,8 @@ else
                SAVE_ARG="$i";
             elif [ "$PREV" == "-load" ]; then
                LOAD_ARG="$i";
+            elif [ "$PREV" == "-delay" ]; then
+               SCAN_ARG="$i";
             elif [ "$PREV" == "-version" ]; then
                VERSION_ARG="$i";
             else
@@ -61,8 +69,6 @@ else
 fi
 
 DOWNLOADABLE_PRODUCTS="padogrid pado padodesktop padoweb padoeclipse geode hazelcast-enterprise hazelcast-oss hazelcast-mc hazelcast-desktop jet-enterprise jet-oss redis-oss snappydata spark kafka confluent hadoop prometheus grafana-enterprise grafana-oss derby"
-
-SLEEP_DELAY=3
 
 EXECUTABLE="`basename $0`"
 
@@ -149,7 +155,9 @@ NAME
 
 SYNOPSIS
    $EXECUTABLE [-product product_name] [-version product_version]
-                    [-quiet] [-simulate] [-scan] [-save|-load file_path] [-?]
+                    [-scan [scan_delay_in_seconds]]
+                    [-save|-load file_path]
+                    [-quiet] [-simulate] [-?]
 
 DESCRIPTION
    Installs PadoGrid and downloadable products. This command downloads one or more selected products
@@ -175,11 +183,13 @@ cat <<EOF
    -simulate
              If specified, then it only simulates the download steps by printing the 'curl' commands.
 
-   -scan
-             If specified, then it scans all downlodable product versions. This may take over a minute
-             to complete. By default, if this option is specified, then it uses the the cached product
-             versions downloaded from the PadoGrid site. The cached product versions are updated
-             nightly.
+   -scan [scan_delay_in_seconds]
+             If specified, then it scans the product download sites to gather product versions. This
+             may take over a minute to complete. Specify scan_delay_in_seconds to delay between
+             GitHub URL scans to prevent the GitHub rate meter from rejecting repetive URL
+             scans. By default, if this option is not specified, then it uses the the cached product
+             versions downloaded from the PadoGrid site. The cached product versions are updated nightly.
+             Default: $SLEEP_DELAY seconds
 
    -save file_path
              Saves the downloadble product versions to the specified file path. If the '-scan' option
@@ -353,6 +363,13 @@ if [ "$LOAD_SPECIFIED" == "true" ]; then
       echo -e >&2 "${CLightRed}ERROR:${CNone} Invalid file: [$DOWNLOAD_VERSIONS_FILE]. Please enter a valid file name."
       echo >&2 "       Command aborted."
       exit 1
+   fi
+fi
+
+# Use the default scan delay if SCAN_ARG is not a number
+if [ "$SCAN_ARG" != "" ]; then
+   if [ -n "$SCAN_ARG" ] && [ "$SCAN_ARG" -eq "$SCAN_ARG" ] 2>/dev/null; then
+      SLEEP_DELAY=$SCAN_ARG
    fi
 fi
 
